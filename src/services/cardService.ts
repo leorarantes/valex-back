@@ -5,6 +5,8 @@ import "../setup.js";
 import { TransactionTypes } from '../repositories/cardRepository.js';
 import * as cardRepository from "../repositories/cardRepository.js";
 import * as employeeRepository from "../repositories/employeeRepository.js";
+import * as paymentRepository from "../repositories/paymentRepository.js";
+import * as rechargeRepository from "../repositories/rechargeRepository.js";
 
 // main functions 
 export async function createCard(company: any, employeeId: number, type: TransactionTypes) {
@@ -38,6 +40,20 @@ export async function activateCard(cardId: number, CVV: string, password: string
     await cardRepository.update(cardId, {password: encryptedPassword});
 }
 
+export async function getCardBalance(cardId: number) {
+    await ensureCardExists(cardId);
+    const transactions = await paymentRepository.findByCardId(cardId);
+    const recharges = await rechargeRepository.findByCardId(cardId);
+
+    const balance = generateCardBalance(transactions, recharges);
+
+    const response = {
+        balance,
+        transactions,
+        recharges
+    };
+    return response;
+}
 
 
 // auxiliary functions
@@ -82,9 +98,19 @@ function generateEncryptedCVV() {
     return encryptedCVV;
 }
 
-async function ensureCardCanBeActivatedAndCVVisValid(cardId: number, CVV: string) {
+async function ensureCardExists(cardId: number) {
     const card = await cardRepository.findById(cardId);
-    if(card) throw { type: "error_card_not_found", message: "Card not found." };
+    if(!card) throw { type: "error_card_not_found", message: "Card not found." };
+}
+
+async function ensureCardExistsAndGetCardData(cardId: number) {
+    const card = await cardRepository.findById(cardId);
+    if(!card) throw { type: "error_card_not_found", message: "Card not found." };
+    return card;
+}
+
+async function ensureCardCanBeActivatedAndCVVisValid(cardId: number, CVV: string) {
+    const card = await ensureCardExistsAndGetCardData(cardId);
 
     const date: Date = new Date;
     let currentYear: number = date.getFullYear();
@@ -107,4 +133,16 @@ function generateEncryptedPassword(password: string) {
     const cryptr: Cryptr = new Cryptr(process.env.PASSWORD_KEY);
     const encryptedPassword: string = cryptr.encrypt(password);
     return encryptedPassword;
+}
+
+function generateCardBalance(transactions: any, recharges: any) {
+    let cardBalance = 0;
+    recharges.forEach(element => {
+        cardBalance -= element.amount;
+    });
+    transactions.forEach(element => {
+        cardBalance += element.amount;
+    });
+
+    return cardBalance;
 }
