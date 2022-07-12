@@ -141,7 +141,7 @@ export function ensureCardIsntExpired(expirationDate: string) {
     }
 }
 
-function ensureCardIsntBlocked(blocked: boolean) {
+export function ensureCardIsntBlocked(blocked: boolean) {
     if(blocked === true) {
         throw { type: "error_card_blocked", message: "This card is blocked." };
     }
@@ -157,7 +157,7 @@ function ensureCardIsntActive(password: any) {
     if(password) throw { type: "error_card_already_active", message: "Card is already activated." };
 }
 
-function ensurePasswordIsValid(password: string, encryptedPassword: string) {
+export function ensurePasswordIsValid(password: string, encryptedPassword: string) {
     const cryptr: Cryptr = new Cryptr(process.env.PASSWORD_KEY);
     const desencryptedPassword: string = cryptr.decrypt(encryptedPassword);
     if(password !== desencryptedPassword) {
@@ -179,7 +179,7 @@ function generateEncryptedPassword(password: string) {
     return encryptedPassword;
 }
 
-function generateCardBalance(transactions: any, recharges: any) {
+export function generateCardBalance(transactions: any, recharges: any) {
     let cardBalance = 0;
     recharges.forEach(element => {
         cardBalance -= element.amount;

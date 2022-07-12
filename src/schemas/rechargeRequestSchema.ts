@@ -2,7 +2,7 @@ import joi from "joi";
 
 const rechargeRequestSchema = joi.object({
     cardId: joi.number().required(),
-    value: joi.number().greater(10)
+    amount: joi.number().greater(0)
 });
 
 export default rechargeRequestSchema;
