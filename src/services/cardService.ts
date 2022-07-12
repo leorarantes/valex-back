@@ -33,7 +33,9 @@ export async function createCard(company: any, employeeId: number, type: Transac
 }
 
 export async function activateCard(cardId: number, CVV: string, password: string) {
-    await ensureCardCanBeActivatedAndCVVisValid(cardId, CVV);
+    const card = await ensureCardExistsAndGetCardData(cardId);
+    ensureCardIsntExpired(card.expirationDate);
+    ensureCVVisValid(CVV, card.securityCode);
 
     const encryptedPassword: string = generateEncryptedPassword(password);
 
@@ -53,6 +55,15 @@ export async function getCardBalance(cardId: number) {
         recharges
     };
     return response;
+}
+
+export async function blockCard(cardId: number, password: string) {
+    const card = await ensureCardExistsAndGetCardData(cardId);
+    ensureCardIsntExpired(card.expirationDate);
+    ensureCardIsntBlocked(card.isBlocked);
+    ensurePasswordIsValid(password, card.password);
+
+    await cardRepository.update(cardId, {isBlocked: true});
 }
 
 
@@ -109,21 +120,35 @@ async function ensureCardExistsAndGetCardData(cardId: number) {
     return card;
 }
 
-async function ensureCardCanBeActivatedAndCVVisValid(cardId: number, CVV: string) {
-    const card = await ensureCardExistsAndGetCardData(cardId);
-
+function ensureCardIsntExpired(expirationDate: string) {
     const date: Date = new Date;
     let currentYear: number = date.getFullYear();
     let currentMonth: number = date.getMonth();
     
-    const expDateSplitted: string[] = card.expirationDate.split("/");
+    const expDateSplitted: string[] = expirationDate.split("/");
 
     if(!((parseInt(expDateSplitted[1]) > currentYear) || (parseInt(expDateSplitted[1]) === currentYear && parseInt(expDateSplitted[0]) >= currentMonth))) {
         throw { type: "error_card_expired", message: "The card has expired." };
     }
+}
 
+function ensureCardIsntBlocked(blocked: boolean) {
+    if(blocked === true) {
+        throw { type: "error_card_blocked", message: "This card is blocked." };
+    }
+}
+
+function ensurePasswordIsValid(password: string, encryptedPassword: string) {
+    const cryptr: Cryptr = new Cryptr(process.env.PASSWORD_KEY);
+    const desencryptedPassword: string = cryptr.decrypt(encryptedPassword);
+    if(password !== desencryptedPassword) {
+        throw { type: "error_invalid_password", message: "Invalid password." };
+    }
+}
+
+async function ensureCVVisValid(CVV: string, encryptedCVV: string) {
     const cryptr: Cryptr = new Cryptr(process.env.CVV_KEY);
-    const desencryptedCVV: string = cryptr.decrypt(card.securityCode);
+    const desencryptedCVV: string = cryptr.decrypt(encryptedCVV);
     if(CVV !== desencryptedCVV) {
         throw { type: "error_invalid_CVV", message: "Invalid security code." };
     }

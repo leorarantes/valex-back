@@ -20,3 +20,9 @@ export async function getCardBalance(req: Request, res: Response) {
     const cardBalance: {balance: number, transactions: any, recharges: any} = await cardService.getCardBalance(parseInt(cardId));
     res.status(200).send(cardBalance);
 };
+
+export async function blockCard(req: Request, res: Response) {
+    const { cardId, password }: {cardId: number, password: string} = req.body;
+    await cardService.blockCard(cardId, password);
+    res.sendStatus(201);
+};
