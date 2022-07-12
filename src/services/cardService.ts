@@ -66,6 +66,14 @@ export async function blockCard(cardId: number, password: string) {
     await cardRepository.update(cardId, {isBlocked: true});
 }
 
+export async function unblockCard(cardId: number, password: string) {
+    const card = await ensureCardExistsAndGetCardData(cardId);
+    ensureCardIsntExpired(card.expirationDate);
+    ensureCardIsBlocked(card.isBlocked);
+    ensurePasswordIsValid(password, card.password);
+
+    await cardRepository.update(cardId, {isBlocked: false});
+}
 
 // auxiliary functions
 async function ensureEmployeeIsRegistered(employeeId: number) {
@@ -135,6 +143,12 @@ function ensureCardIsntExpired(expirationDate: string) {
 function ensureCardIsntBlocked(blocked: boolean) {
     if(blocked === true) {
         throw { type: "error_card_blocked", message: "This card is blocked." };
+    }
+}
+
+function ensureCardIsBlocked(blocked: boolean) {
+    if(blocked === false) {
+        throw { type: "error_card_already_unblocked", message: "This card is already unblocked." };
     }
 }
 
