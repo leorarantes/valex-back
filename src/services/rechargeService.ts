@@ -1,6 +1,7 @@
 import * as rechargeRepository from "../repositories/rechargeRepository.js";
 import { ensureCardExistsAndGetCardData, ensureCardIsntExpired } from "./cardService.js";
 
+// main functions
 export async function rechargeCard(cardId: number, amount: number) {
     const card = await ensureCardExistsAndGetCardData(cardId);
 

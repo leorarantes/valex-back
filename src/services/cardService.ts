@@ -15,7 +15,8 @@ export async function createCard(company: any, employeeId: number, type: Transac
 
     const number = faker.finance.creditCardNumber();
     const cardholderName = await generateCardholderName(employeeId);
-    const securityCode = generateEncryptedCVV();
+    const CVV = faker.finance.creditCardCVV();
+    const securityCode = generateEncryptedCVV(CVV);
     const expirationDate: string = generateExpirationDate();
 
     await cardRepository.insert(
@@ -30,12 +31,22 @@ export async function createCard(company: any, employeeId: number, type: Transac
             type
         }
     );
+    
+    return (
+        {
+            number,
+            cardholderName,
+            CVV,
+            expirationDate,
+            type
+        }
+    );
 }
 
 export async function activateCard(cardId: number, CVV: string, password: string) {
     const card = await ensureCardExistsAndGetCardData(cardId);
     ensureCardIsntExpired(card.expirationDate);
-    ensureCVVisValid(CVV, card.securityCode);
+    await ensureCVVisValid(CVV, card.securityCode);
     ensureCardIsntActive(card.password);
 
     const encryptedPassword: string = generateEncryptedPassword(password);
@@ -78,12 +89,12 @@ export async function unblockCard(cardId: number, password: string) {
 
 // auxiliary functions
 async function ensureEmployeeIsRegistered(employeeId: number) {
-    const employee = employeeRepository.findById(employeeId);
+    const employee = await employeeRepository.findById(employeeId);
     if(!employee) throw { type: "error_no_employees_found", message: "No employees found." };
 }
 
 async function ensureCardDoesntAlreadyExists(employeeId: number, type: TransactionTypes) {
-    const card = cardRepository.findByTypeAndEmployeeId(type, employeeId);
+    const card = await cardRepository.findByTypeAndEmployeeId(type, employeeId);
     if(card) throw { type: "error_card_already_exists", message: "The employee already has this type of card." };
 }
 
@@ -111,8 +122,7 @@ function generateExpirationDate() {
     return expDate;
 }
 
-function generateEncryptedCVV() {
-    const CVV: string = faker.finance.creditCardCVV();
+function generateEncryptedCVV(CVV: string) {
     const cryptr: Cryptr = new Cryptr(process.env.CVV_KEY);
     const encryptedCVV: string = cryptr.encrypt(CVV);
     return encryptedCVV;
@@ -182,10 +192,10 @@ function generateEncryptedPassword(password: string) {
 export function generateCardBalance(transactions: any, recharges: any) {
     let cardBalance = 0;
     recharges.forEach(element => {
-        cardBalance -= element.amount;
+        cardBalance += element.amount;
     });
     transactions.forEach(element => {
-        cardBalance += element.amount;
+        cardBalance -= element.amount;
     });
 
     return cardBalance;

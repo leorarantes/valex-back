@@ -12,7 +12,8 @@ export async function validateApiKey(req: Request, res: Response, next: NextFunc
     }
 
     try {
-        const company = companyRepository.findByApiKey(key);
+        const company = await companyRepository.findByApiKey(key);
+        if(!company) return res.status(401).send("Invalid Api Key");
         res.locals = company;
         next();
     } catch (e) {

@@ -11,8 +11,8 @@ const cardRouter = Router();
 
 cardRouter.post('/card', validateSchema(cardRequestSchema), validateApiKey, createCard);
 cardRouter.put('/card/activate', validateSchema(activateRequestSchema), activateCard);
-cardRouter.get('card/balance/:id', getCardBalance);
-cardRouter.put('card/block', validateSchema(blockRequestSchema), blockCard);
-cardRouter.put('card/unblock', validateSchema(blockRequestSchema), unblockCard);
+cardRouter.get('/card/balance/:id', getCardBalance);
+cardRouter.put('/card/block', validateSchema(blockRequestSchema), blockCard);
+cardRouter.put('/card/unblock', validateSchema(blockRequestSchema), unblockCard);
 
 export default cardRouter;

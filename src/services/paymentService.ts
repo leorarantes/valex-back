@@ -4,6 +4,7 @@ import * as businessRepository from "../repositories/businessRepository.js";
 import { ensureCardExistsAndGetCardData, ensureCardIsntBlocked, ensureCardIsntExpired, ensurePasswordIsValid, generateCardBalance } from "./cardService.js";
 import { ensureCardIsActivated } from "./rechargeService.js";
 
+// main functions
 export async function payment(cardId: number, password: string, businessId: number, amount: number) {
     const card = await ensureCardExistsAndGetCardData(cardId);
 
