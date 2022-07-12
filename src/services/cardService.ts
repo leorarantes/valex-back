@@ -36,6 +36,7 @@ export async function activateCard(cardId: number, CVV: string, password: string
     const card = await ensureCardExistsAndGetCardData(cardId);
     ensureCardIsntExpired(card.expirationDate);
     ensureCVVisValid(CVV, card.securityCode);
+    ensureCardIsntActive(card.password);
 
     const encryptedPassword: string = generateEncryptedPassword(password);
 
@@ -122,13 +123,13 @@ async function ensureCardExists(cardId: number) {
     if(!card) throw { type: "error_card_not_found", message: "Card not found." };
 }
 
-async function ensureCardExistsAndGetCardData(cardId: number) {
+export async function ensureCardExistsAndGetCardData(cardId: number) {
     const card = await cardRepository.findById(cardId);
     if(!card) throw { type: "error_card_not_found", message: "Card not found." };
     return card;
 }
 
-function ensureCardIsntExpired(expirationDate: string) {
+export function ensureCardIsntExpired(expirationDate: string) {
     const date: Date = new Date;
     let currentYear: number = date.getFullYear();
     let currentMonth: number = date.getMonth();
@@ -150,6 +151,10 @@ function ensureCardIsBlocked(blocked: boolean) {
     if(blocked === false) {
         throw { type: "error_card_already_unblocked", message: "This card is already unblocked." };
     }
+}
+
+function ensureCardIsntActive(password: any) {
+    if(password) throw { type: "error_card_already_active", message: "Card is already activated." };
 }
 
 function ensurePasswordIsValid(password: string, encryptedPassword: string) {
